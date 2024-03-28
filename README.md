@@ -61,14 +61,126 @@ UNet基于方程前 $`l`$ 个时间步的解 $`{\hat{u}^{k-l+1},...,\hat{u}^k}`$
 
 ## 快速开始
 
+### 配置环境
+
+创建新的conda环境并安装如下依赖
+
+- Python 3.8
+- CUDA 11.6
+- PyTorch 1.13.1
+
+安装命令实例：
+
+```bash
+# create environment
+conda create -n PDENNEval python=3.8 
+conda activate PDENNEval
+
+# install pytorch
+conda install pytorch==1.13.1 pytorch-cuda=11.6 -c pytorch -c nvidia
+
+# to read dataset file in HDF5 format
+pip install h5py
+
+# visualization
+pip install tensorboard matplotlib tqdm 
+```
+
 ### 数据准备
+
+这里使用[PDEBench](https://arxiv.org/abs/2210.07182)的数据来训练和测试模型，实现中提供的数据读取代码主要用于读取PDEBench格式的代码。PDEBench提供了涵盖多个方程的数据集，可以从[DaRUS data repository](https://darus.uni-stuttgart.de/dataset.xhtml?persistentId=doi:10.18419/darus-2986)下载这些数据。如果你在研究中使用了PDEBench的数据，请引用他们的工作：
+
+<details>
+<summary>
+    <a href="https://arxiv.org/abs/2210.07182">PDEBench: An Extensive Benchmark for Scientific Machine Learning - NeurIPS'2022 </a>
+</summary>
+<br/>
+
+```
+@inproceedings{PDEBench2022,
+author = {Takamoto, Makoto and Praditia, Timothy and Leiteritz, Raphael and MacKinlay, Dan and Alesiani, Francesco and Pflüger, Dirk and Niepert, Mathias},
+title = {{PDEBench: An Extensive Benchmark for Scientific Machine Learning}},
+year = {2022},
+booktitle = {36th Conference on Neural Information Processing Systems (NeurIPS 2022) Track on Datasets and Benchmarks},
+url = {https://arxiv.org/abs/2210.07182}
+}
+```
+
+</details>
+
+
+<details>
+<summary>
+    <a href="https://doi.org/10.18419/darus-2986">PDEBench Datasets - NeurIPS'2022 </a>
+</summary>
+<br/>
+
+```
+@data{darus-2986_2022,
+author = {Takamoto, Makoto and Praditia, Timothy and Leiteritz, Raphael and MacKinlay, Dan and Alesiani, Francesco and Pflüger, Dirk and Niepert, Mathias},
+publisher = {DaRUS},
+title = {{PDEBench Datasets}},
+year = {2022},
+doi = {10.18419/darus-2986},
+url = {https://doi.org/10.18419/darus-2986}
+}
+```
+</details>
 
 ### 配置文件
 
+`config`目录包含多个`yaml`配置文件，命名格式为`config_{1/2/3}D_{PDE名称}.yaml`，其中保存了所有用于训练和测试的参数。部分参数的解释如下：
+
+- 训练参数：
+    - `training_type`：str，设置为`autoregressive`以使用自回归损失进行自回归训练，或者设置为`single`以使用单步损失进行单步训练。
+    - `pushforward`：bool，设置为`True`以进行推进训练。同时，`training_type`也必须设置为`True`。
+    - `initial_step`：int，模型输入时间的步数 $l$。（默认值：10）
+    - `unroll_step`：int，使用pushforward trick时要反向传播的时间步数$M$。（默认值：20）
+- 模型参数：
+    - `in_channels`：int，要求解的变量数量。例如，对于1D可压缩Navier-Stokes方程，有3个要求解的变量：密度、压力和速度，该值就设置为3。
+    - `out_channels`：int，等于`in_channels`的输出通道数。
+    - `init_features`：int，U-Net中第一个上采样块中的通道数。
+
+其余的参数分别是数据集、dataloader、optimizer和learning rate scheduler相关的参数，参数的意思比较显然。
+
 ### 训练
+
+1. 检查配置文件中的参数
+
+    1. 检查配置文件中的参数，确保`file_name` 和`saved_folder`对应数据文件名和文件存放路径；
+
+    2. 确保配置文件中的`if_training`设置为`True`；
+
+2. 调整训练的超参数，例如学习率`lr`，批量大小`batch_size`，训练epoch数`epochs`等；
+
+3. 运行如下命令：
+
+    ```bash
+    CUDA_VISIBLE_DEVICES={your_cuda_id} python train.py ./config/{config_file_name}
+    ```
 
 ### 测试
 
+1. 修改配置文件
+
+    1. 设置`model_path`的路径为模型checkpoint的路径；
+
+    2. 设置`if_training`为`False`；
+
+2. 运行如下命令：
+
+    ```bash
+    CUDA_VISIBLE_DEVICES={your_cuda_id} python train.py ./config/{config_file_name}
+    ```
+
 ## 结果可视化
 
-## 引用
+我们提供了求解1维和2维方程结果可视化的代码，前提是需要先训练好模型，详情参见`visualize_1d_inference.ipynb`和`visualize_2d_inference.ipynb`。
+
+例如：求解1D Advection方程的结果，横轴表示求解空间域，每一个子图对应不同时刻，真解（红色）和预测解（蓝色）的值。
+
+![image-20240328234539485](README.assets/image-20240328234539485.png)
+
+例如：求解2D浅水方程的结果，下图为真解和预测解的残差。
+
+![image-20240328235018936](README.assets/image-20240328235018936.png)
