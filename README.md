@@ -134,8 +134,8 @@ url = {https://doi.org/10.18419/darus-2986}
 - 训练参数：
     - `training_type`：str，设置为`autoregressive`以使用自回归损失进行自回归训练，或者设置为`single`以使用单步损失进行单步训练。
     - `pushforward`：bool，设置为`True`以进行推进训练。同时，`training_type`也必须设置为`True`。
-    - `initial_step`：int，模型输入时间的步数 $l$。（默认值：10）
-    - `unroll_step`：int，使用pushforward trick时要反向传播的时间步数$M$。（默认值：20）
+    - `initial_step`：int，模型输入时间的步数 $`l`$。（默认值：10）
+    - `unroll_step`：int，使用pushforward trick时要反向传播的时间步数 $`M`$。（默认值：20）
 - 模型参数：
     - `in_channels`：int，要求解的变量数量。例如，对于1D可压缩Navier-Stokes方程，有3个要求解的变量：密度、压力和速度，该值就设置为3。
     - `out_channels`：int，等于`in_channels`的输出通道数。
